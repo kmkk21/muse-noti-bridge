@@ -143,6 +143,12 @@ class MuseNotificationListenerService : NotificationListenerService() {
 
                         if (decision.isUrgent && settings.urgentInstantSend && settings.hasAnyDeliveryChannel) {
                             DeliveryScheduler.triggerImmediate(applicationContext)
+                        } else if (settings.batchIntervalMinutes < 15 && settings.hasAnyDeliveryChannel) {
+                            DeliveryScheduler.scheduleNextShortInterval(
+                                applicationContext,
+                                settings.batchIntervalMinutes,
+                                androidx.work.ExistingWorkPolicy.KEEP
+                            )
                         }
                     }
                 }

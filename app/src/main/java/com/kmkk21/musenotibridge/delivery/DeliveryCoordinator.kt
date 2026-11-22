@@ -7,6 +7,8 @@ import com.kmkk21.musenotibridge.data.db.NotificationStatus
 import com.kmkk21.musenotibridge.data.prefs.BridgeSettings
 import com.kmkk21.musenotibridge.data.prefs.SettingsRepository
 import com.kmkk21.musenotibridge.domain.DigestFormatter
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.TimeUnit
 
 data class DeliveryOutcome(
@@ -21,10 +23,10 @@ class DeliveryCoordinator(context: Context) {
     private val dao = AppDatabase.getInstance(context).notificationDao()
     private val settingsRepo = SettingsRepository(context)
 
-    suspend fun deliverPendingBatch(): DeliveryOutcome {
+    suspend fun deliverPendingBatch(): DeliveryOutcome = deliveryMutex.withLock {
         val settings = settingsRepo.getSettings()
         if (!settings.hasAnyDeliveryChannel) {
-            return DeliveryOutcome(
+            return@withLock DeliveryOutcome(
                 success = false,
                 sentCount = 0,
                 estimatedTokens = 0,
@@ -35,7 +37,7 @@ class DeliveryCoordinator(context: Context) {
         val pending = dao.getPendingForDelivery()
         if (pending.isEmpty()) {
             pruneOldRecords()
-            return DeliveryOutcome(
+            return@withLock DeliveryOutcome(
                 success = true,
                 sentCount = 0,
                 estimatedTokens = 0,
@@ -96,7 +98,7 @@ class DeliveryCoordinator(context: Context) {
 
         pruneOldRecords()
 
-        return DeliveryOutcome(
+        DeliveryOutcome(
             success = anySuccess,
             sentCount = if (anySuccess) pending.size else 0,
             estimatedTokens = digest.estimatedTokens,
@@ -151,5 +153,9 @@ class DeliveryCoordinator(context: Context) {
         val cutoff = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7)
         dao.pruneOld(cutoff)
         dao.pruneOldDeliveryLogs(cutoff)
+    }
+
+    companion object {
+        private val deliveryMutex = Mutex()
     }
 }

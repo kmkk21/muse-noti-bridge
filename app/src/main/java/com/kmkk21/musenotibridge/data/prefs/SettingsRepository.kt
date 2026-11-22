@@ -95,7 +95,7 @@ class SettingsRepository(private val context: Context) {
             prefs[Keys.IGNORE_KEYWORDS] = updated.ignoreKeywords
             prefs[Keys.URGENT_KEYWORDS] = updated.urgentKeywords
             prefs[Keys.MAX_CONTENT_CHARS] = updated.maxContentChars.coerceIn(60, 400)
-            prefs[Keys.BATCH_INTERVAL_MINUTES] = updated.batchIntervalMinutes.coerceIn(15, 720)
+            prefs[Keys.BATCH_INTERVAL_MINUTES] = updated.batchIntervalMinutes.coerceIn(5, 720)
             prefs[Keys.URGENT_INSTANT_SEND] = updated.urgentInstantSend
 
             prefs[Keys.EMAIL_ENABLED] = updated.emailEnabled

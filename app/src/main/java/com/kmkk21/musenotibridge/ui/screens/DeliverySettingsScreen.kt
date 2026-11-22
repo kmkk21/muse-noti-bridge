@@ -51,7 +51,7 @@ import com.kmkk21.musenotibridge.data.prefs.BridgeSettings
 import com.kmkk21.musenotibridge.data.prefs.SmtpPreset
 import com.kmkk21.musenotibridge.ui.BridgeViewModel
 
-private val INTERVAL_OPTIONS = listOf(30, 60, 120, 180, 360, 720)
+private val INTERVAL_OPTIONS = listOf(5, 10, 15, 30, 60, 120, 180, 360, 720)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
