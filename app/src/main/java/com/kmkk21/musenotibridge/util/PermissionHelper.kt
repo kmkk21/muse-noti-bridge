@@ -57,20 +57,17 @@ object PermissionHelper {
 
     fun loadInstalledApps(context: Context): List<InstalledAppItem> {
         val pm = context.packageManager
-        val apps = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            pm.getInstalledApplications(PackageManager.ApplicationInfoFlags.of(0))
+        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val activities = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            pm.queryIntentActivities(launcherIntent, PackageManager.ResolveInfoFlags.of(0))
         } else {
             @Suppress("DEPRECATION")
-            pm.getInstalledApplications(0)
+            pm.queryIntentActivities(launcherIntent, 0)
         }
 
-        return apps
+        return activities
+            .mapNotNull { it.activityInfo?.applicationInfo }
             .filter { it.packageName != context.packageName }
-            .filter {
-                val isSystem = (it.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                val hasLauncher = pm.getLaunchIntentForPackage(it.packageName) != null
-                !isSystem || hasLauncher
-            }
             .map { info ->
                 InstalledAppItem(
                     packageName = info.packageName,

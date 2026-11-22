@@ -25,33 +25,48 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Run Unit Tests & Assemble Debug APK
-        run: ./gradlew testDebugUnitTest assembleDebug
+      - name: Decode Release Keystore
+        if: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "RELEASE_STORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
 
-      - name: Rename APK
+      - name: Run Unit Tests & Assemble Release APK
+        env:
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: ./gradlew testDebugUnitTest assembleRelease
+
+      - name: Rename Release APK
         run: |
           TAG="${GITHUB_REF_NAME}"
           if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then TAG="latest"; fi
-          cp app/build/outputs/apk/debug/app-debug.apk "MuseNotiBridge-${TAG}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "MuseNotiBridge-${TAG}-release.apk"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MuseNotiBridge-apk
-          path: MuseNotiBridge-*.apk
+          name: MuseNotiBridge-release-apk
+          path: MuseNotiBridge-*-release.apk
 
       - name: Publish GitHub Release on Tag
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" "MuseNotiBridge-${GITHUB_REF_NAME}.apk" \
-            --title "Muse 알림 브릿지 ${GITHUB_REF_NAME}" \
-            --notes "Meta Muse AI 전용 안드로이드 알림 브릿지 릴리즈입니다.
+          gh release create "${GITHUB_REF_NAME}" "MuseNotiBridge-${GITHUB_REF_NAME}-release.apk" \
+            --title "Muse 알림 브릿지 ${GITHUB_REF_NAME} (정식 릴리즈 서명)" \
+            --notes "Meta Muse AI 전용 안드로이드 알림 브릿지 정식 릴리즈 빌드입니다.
 
-          ### 포함 기능
-          - 광고 푸시 알림 로컬 즉시 자동 삭제 (토큰 0원)
-          - 인증번호/OTP 자동 제외 · 60초 중복 제거 · 본문 길이 압축으로 토큰 절약
-          - 가계부/결제 · 일정/예약 · 일반/중요 자동 사전 분류
-          - WorkManager 기반 오프라인 자동 재시도 배치 전송
-          - Muse Mail(SMTP: Gmail/네이버/Outlook) 및 Webhook(JSON) 연동 지원"
+          ### v1.0.1 보안 경고 개선 사항
+          - 전용 Release 키스토어 서명 적용 (debuggable=false, R8 코드/리소스 최적화)
+          - 민감 권한 \`QUERY_ALL_PACKAGES\` 제거 및 안드로이드 표준 \`<queries>\` 선언으로 교체
+          - 비암호화 평문 통신(\`usesCleartextTraffic\`) 제거
+          - ⚠️ 기존 v1.0.0(디버그 서명)을 이미 설치하셨다면 삭제 후 v1.0.1을 새로 설치해 주세요.
+
+          ### 설치 팁 (갤럭시 / 안드로이드 13+)
+          - 갤럭시에서 설치가 막히면: \`설정 → 보안 및 개인정보 보호 → 보안 위험 자동 차단\`을 잠시 끄고 설치한 뒤 다시 켜세요.
+          - 설치 후 '알림 접근 권한'이 회색일 때: \`설정 → 앱 → Muse 알림 브릿지 → 우측 상단 ⋮ → 제한된 설정 허용\`"

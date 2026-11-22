@@ -20,7 +20,9 @@ Meta **Muse AI** 에이전트와 안드로이드 스마트폰을 연결할 때 �
 
 ## 설치 및 초기 설정 (3분 완료)
 
-1. [Releases](https://github.com/kmkk21/muse-noti-bridge/releases)에서 최신 `MuseNotiBridge-v1.0.0.apk`를 안드로이드 폰에 다운로드해 설치합니다.
+1. [Releases](https://github.com/kmkk21/muse-noti-bridge/releases)에서 최신 `MuseNotiBridge-v1.0.1-release.apk`를 안드로이드 폰에 다운로드해 설치합니다.
+   - 갤럭시에서 설치가 막히면 `설정 → 보안 및 개인정보 보호 → 보안 위험 자동 차단`을 잠시 끄고 설치한 뒤 다시 켜세요.
+   - 설치 후 `알림 접근 권한`이 회색으로 비활성화된 경우(안드로이드 13+): `설정 → 앱 → Muse 알림 브릿지 → 우측 상단 ⋮ → 제한된 설정 허용`을 한 번 눌러주면 열립니다.
 2. 앱을 열고 **대시보드**의 3가지 체크리스트를 순서대로 탭합니다:
    - **알림 접근 권한** 허용
    - **배터리 절전 예외** 허용 (갤럭시 One UI 절전에서도 연결 유지)
@@ -30,7 +32,7 @@ Meta **Muse AI** 에이전트와 안드로이드 스마트폰을 연결할 때 �
 ## 직접 빌드하기
 
 ```bash
-./gradlew testDebugUnitTest assembleDebug
+./gradlew testDebugUnitTest assembleRelease
 ```
 
-빌드된 APK 위치: `app/build/outputs/apk/debug/app-debug.apk`
+빌드된 APK 위치: `app/build/outputs/apk/release/app-release.apk`
