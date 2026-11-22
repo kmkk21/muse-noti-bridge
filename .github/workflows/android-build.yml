@@ -1,10 +1,14 @@
-name: Android CI
+name: Android CI & Release
 
 on:
   push:
     branches: [ main ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -24,8 +28,30 @@ jobs:
       - name: Run Unit Tests & Assemble Debug APK
         run: ./gradlew testDebugUnitTest assembleDebug
 
+      - name: Rename APK
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then TAG="latest"; fi
+          cp app/build/outputs/apk/debug/app-debug.apk "MuseNotiBridge-${TAG}.apk"
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MuseNotiBridge-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: MuseNotiBridge-apk
+          path: MuseNotiBridge-*.apk
+
+      - name: Publish GitHub Release on Tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" "MuseNotiBridge-${GITHUB_REF_NAME}.apk" \
+            --title "Muse 알림 브릿지 ${GITHUB_REF_NAME}" \
+            --notes "Meta Muse AI 전용 안드로이드 알림 브릿지 릴리즈입니다.
+
+          ### 포함 기능
+          - 광고 푸시 알림 로컬 즉시 자동 삭제 (토큰 0원)
+          - 인증번호/OTP 자동 제외 · 60초 중복 제거 · 본문 길이 압축으로 토큰 절약
+          - 가계부/결제 · 일정/예약 · 일반/중요 자동 사전 분류
+          - WorkManager 기반 오프라인 자동 재시도 배치 전송
+          - Muse Mail(SMTP: Gmail/네이버/Outlook) 및 Webhook(JSON) 연동 지원"
